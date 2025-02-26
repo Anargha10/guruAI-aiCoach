@@ -69,6 +69,7 @@ npm run dev
 yarn dev
 
 **Usage**
+
 Industry Insights:
 guru-ai uses Inngest to run a scheduled function every Sunday that fetches and updates industry insights using Google Generative AI. Monitor the Inngest dev server logs during local development for insights updates.
 
