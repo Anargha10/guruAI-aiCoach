@@ -46,10 +46,10 @@ Install Dependencies:
 npm install
 # or
 yarn install
+
 Set Up Environment Variables:
 
 Create a .env file in the root directory and add:
-
 
 DATABASE_URL=postgresql://<user>:<password>@<host>/<database>?sslmode=require
 GEMINI_API_KEY=your-gemini-api-key
@@ -67,6 +67,7 @@ Run the Development Server:
 npm run dev
 # or
 yarn dev
+
 **Usage**
 Industry Insights:
 guru-ai uses Inngest to run a scheduled function every Sunday that fetches and updates industry insights using Google Generative AI. Monitor the Inngest dev server logs during local development for insights updates.
