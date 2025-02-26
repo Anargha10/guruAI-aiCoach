@@ -1,6 +1,6 @@
 check it out on:- https://guru-ai-ai-coach.vercel.app/
 
-***guru-ai**
+**guru-ai**
 guru-ai is a cutting-edge AI-powered career coaching and resume building application designed to empower professionals in achieving their career goals. Leveraging advanced generative AI, scheduled workflows, and a sleek, responsive interface, guru-ai provides personalized industry insights and helps users create standout resumes.
 
 **Features**
