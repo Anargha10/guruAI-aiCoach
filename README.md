@@ -13,6 +13,8 @@ Scheduled background updates via Inngest (runs every Sunday at midnight).
 Build and edit your resume with an intuitive form interface and live Markdown preview.
 Seamless PDF generation from your resume content with a user-friendly alert prompting to save before downloading.
 User Authentication & Personalization
+**Cover Letter builder**
+Generate cover letter which will catch your recruiter's attention by showcasing your skills in a unique manner
 
 **Secure authentication and user management powered by Clerk.**
 Personalized profiles linked with industry insights and career recommendations.
@@ -75,6 +77,9 @@ guru-ai uses Inngest to run a scheduled function every Sunday that fetches and u
 
 Resume Builder:
 Build your resume using the form, preview your Markdown, and download a PDF version. An alert will prompt users to save their resume before downloading to ensure the latest content is captured.
+
+Cover Letter builder:
+you can generate multiple cover letters, along with deleting them. You just have to copy and paste the job description
 
 Deployment
 Vercel:
