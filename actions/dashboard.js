@@ -1,11 +1,11 @@
-export const runtime = "nodejs";
-export const preferredRegion = "auto";
-export const dynamic = "force-dynamic";
 
 import { db } from "@/lib/prisma";
 import {auth} from "@clerk/nextjs/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+export const runtime = "nodejs";
+export const preferredRegion = "auto";
+export const dynamic = "force-dynamic";
 
 
  const genAI=   new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
