@@ -1,3 +1,6 @@
+export const runtime = "nodejs";
+export const preferredRegion = "auto";
+export const dynamic = "force-dynamic";
 
 import { db } from "@/lib/prisma";
 import {auth} from "@clerk/nextjs/server";
