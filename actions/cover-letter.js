@@ -1,3 +1,6 @@
+export const runtime = "nodejs";
+export const preferredRegion = "auto";
+export const dynamic = "force-dynamic";
 "use server";
 
 import { db } from "@/lib/prisma";
