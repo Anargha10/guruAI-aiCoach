@@ -23,7 +23,7 @@ import useFetch from "@/hooks/use-fetch";
 import { useUser } from "@clerk/nextjs";
 import { entriesToMarkdown } from "@/app/lib/helper";
 import { resumeSchema } from "@/app/lib/schema";
-import { jsPDF } from "jspdf"; // client-side only
+
 import html2pdf from "html2pdf.js";
 
 export default function ResumeBuilder({ initialContent }) {

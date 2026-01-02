@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { generateQuiz, saveQuizResult } from "@/actions/interview";
+import { saveQuizResult } from "@/actions/interview";
 import QuizResult from "./quiz-result";
 import useFetch from "@/hooks/use-fetch";
 import { BarLoader } from "react-spinners";
@@ -21,12 +21,8 @@ export default function Quiz() {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState([]);
   const [showExplanation, setShowExplanation] = useState(false);
-
-  const {
-    loading: generatingQuiz,
-    fn: generateQuizFn,
-    data: quizData,
-  } = useFetch(generateQuiz);
+  const [quizData, setQuizData] = useState(null);
+  const [generatingQuiz, setGeneratingQuiz] = useState(false);
 
   const {
     loading: savingResult,
@@ -41,6 +37,26 @@ export default function Quiz() {
     }
   }, [quizData]);
 
+  const generateQuizFn = async () => {
+    try {
+      setGeneratingQuiz(true);
+
+      const res = await fetch("/api/ai/interview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!res.ok) throw new Error("Failed to generate quiz");
+
+      const { questions } = await res.json();
+      setQuizData(questions);
+    } catch (err) {
+      toast.error(err.message || "Quiz generation failed");
+    } finally {
+      setGeneratingQuiz(false);
+    }
+  };
+
   const handleAnswer = (answer) => {
     const newAnswers = [...answers];
     newAnswers[currentQuestion] = answer;
@@ -49,7 +65,7 @@ export default function Quiz() {
 
   const handleNext = () => {
     if (currentQuestion < quizData.length - 1) {
-      setCurrentQuestion(currentQuestion + 1);
+      setCurrentQuestion((q) => q + 1);
       setShowExplanation(false);
     } else {
       finishQuiz();
@@ -59,9 +75,7 @@ export default function Quiz() {
   const calculateScore = () => {
     let correct = 0;
     answers.forEach((answer, index) => {
-      if (answer === quizData[index].correctAnswer) {
-        correct++;
-      }
+      if (answer === quizData[index].correctAnswer) correct++;
     });
     return (correct / quizData.length) * 100;
   };
@@ -80,15 +94,15 @@ export default function Quiz() {
     setCurrentQuestion(0);
     setAnswers([]);
     setShowExplanation(false);
-    generateQuizFn();
+    setQuizData(null);
     setResultData(null);
+    generateQuizFn();
   };
 
   if (generatingQuiz) {
-    return <BarLoader className="mt-4" width={"100%"} color="gray" />;
+    return <BarLoader className="mt-4" width="100%" color="gray" />;
   }
 
-  // Show results if quiz is completed
   if (resultData) {
     return (
       <div className="mx-2">
@@ -105,8 +119,7 @@ export default function Quiz() {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            This quiz contains 10 questions specific to your industry and
-            skills. Take your time and choose the best answer for each question.
+            This quiz contains 10 questions specific to your industry and skills.
           </p>
         </CardContent>
         <CardFooter>
@@ -149,6 +162,7 @@ export default function Quiz() {
           </div>
         )}
       </CardContent>
+
       <CardFooter className="flex justify-between">
         {!showExplanation && (
           <Button
@@ -162,11 +176,7 @@ export default function Quiz() {
         <Button
           onClick={handleNext}
           disabled={!answers[currentQuestion] || savingResult}
-          className="ml-auto"
         >
-          {savingResult && (
-            <BarLoader className="mt-4" width={"100%"} color="gray" />
-          )}
           {currentQuestion < quizData.length - 1
             ? "Next Question"
             : "Finish Quiz"}

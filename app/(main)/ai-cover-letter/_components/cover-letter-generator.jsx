@@ -1,6 +1,5 @@
 "use client";
 
-
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -16,14 +15,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { generateCoverLetter } from "@/actions/cover-letter";
-import useFetch from "@/hooks/use-fetch";
+import { saveCoverLetter } from "@/actions/cover-letter";
 import { coverLetterSchema } from "@/app/lib/schema";
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function CoverLetterGenerator() {
   const router = useRouter();
+  const [generating, setGenerating] = useState(false);
 
   const {
     register,
@@ -34,26 +33,36 @@ export default function CoverLetterGenerator() {
     resolver: zodResolver(coverLetterSchema),
   });
 
-  const {
-    loading: generating,
-    fn: generateLetterFn,
-    data: generatedLetter,
-  } = useFetch(generateCoverLetter);
-
-  // Update content when letter is generated
-  useEffect(() => {
-    if (generatedLetter) {
-      toast.success("Cover letter generated successfully!");
-      router.push(`/ai-cover-letter/${generatedLetter.id}`);
-      reset();
-    }
-  }, [generatedLetter]);
-
   const onSubmit = async (data) => {
     try {
-      await generateLetterFn(data);
+      setGenerating(true);
+
+      /** STEP 1: Generate via API */
+      const res = await fetch("/api/ai/cover-letter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      if (!res.ok) {
+        throw new Error("AI generation failed");
+      }
+
+      const { content } = await res.json();
+
+      /** STEP 2: Save via Server Action */
+      const saved = await saveCoverLetter({
+        ...data,
+        content,
+      });
+
+      toast.success("Cover letter generated successfully!");
+      router.push(`/ai-cover-letter/${saved.id}`);
+      reset();
     } catch (error) {
       toast.error(error.message || "Failed to generate cover letter");
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -68,15 +77,10 @@ export default function CoverLetterGenerator() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            {/* Form fields remain the same */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="companyName">Company Name</Label>
-                <Input
-                  id="companyName"
-                  placeholder="Enter company name"
-                  {...register("companyName")}
-                />
+                <Input {...register("companyName")} />
                 {errors.companyName && (
                   <p className="text-sm text-red-500">
                     {errors.companyName.message}
@@ -86,11 +90,7 @@ export default function CoverLetterGenerator() {
 
               <div className="space-y-2">
                 <Label htmlFor="jobTitle">Job Title</Label>
-                <Input
-                  id="jobTitle"
-                  placeholder="Enter job title"
-                  {...register("jobTitle")}
-                />
+                <Input {...register("jobTitle")} />
                 {errors.jobTitle && (
                   <p className="text-sm text-red-500">
                     {errors.jobTitle.message}
@@ -102,8 +102,6 @@ export default function CoverLetterGenerator() {
             <div className="space-y-2">
               <Label htmlFor="jobDescription">Job Description</Label>
               <Textarea
-                id="jobDescription"
-                placeholder="Paste the job description here"
                 className="h-32"
                 {...register("jobDescription")}
               />
