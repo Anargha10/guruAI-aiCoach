@@ -1,5 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
-import { generateAIInsights } from "@app/lib/ai/industry";
+import { generateAIInsights } from "@/app/lib/ai/industry";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
