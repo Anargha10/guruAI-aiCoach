@@ -8,6 +8,33 @@ export const dynamic = "force-dynamic";
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
+async function generateQuestions({ industry, skills, offset }) {
+  const prompt = `
+Generate 5 technical interview questions for a ${industry} professional${
+    skills?.length ? ` with expertise in ${skills.join(", ")}` : ""
+}.
+
+These should be DIFFERENT from previous questions.
+
+Return ONLY valid JSON:
+{
+  "questions": [
+    {
+      "question": "string",
+      "options": ["string","string","string","string"],
+      "correctAnswer": "string",
+      "explanation": "string"
+    }
+  ]
+}
+`;
+
+  const result = await model.generateContent(prompt);
+  const text = result.response.text();
+  const cleaned = text.replace(/```(?:json)?\n?/g, "").trim();
+  return JSON.parse(cleaned).questions;
+}
+
 export async function POST() {
   try {
     const { userId } = await auth();
@@ -15,13 +42,9 @@ export async function POST() {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 🔹 Fetch user profile directly
     const user = await db.user.findUnique({
       where: { clerkUserId: userId },
-      select: {
-        industry: true,
-        skills: true,
-      },
+      select: { industry: true, skills: true },
     });
 
     if (!user?.industry) {
@@ -31,44 +54,22 @@ export async function POST() {
       );
     }
 
-    const prompt = `
-      Generate 10 technical interview questions for a ${
-        user.industry
-      } professional${
-      user.skills?.length ? ` with expertise in ${user.skills.join(", ")}` : ""
-    }.
+    // 🔹 Two fast calls instead of one slow call
+    const firstBatch = await generateQuestions({
+      industry: user.industry,
+      skills: user.skills,
+      offset: 0,
+    });
 
-      Each question should be multiple choice with 4 options.
+    const secondBatch = await generateQuestions({
+      industry: user.industry,
+      skills: user.skills,
+      offset: 5,
+    });
 
-      Return ONLY valid JSON:
-      {
-        "questions": [
-          {
-            "question": "string",
-            "options": ["string", "string", "string", "string"],
-            "correctAnswer": "string",
-            "explanation": "string"
-          }
-        ]
-      }
-    `;
-
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
-    const cleanedText = text.replace(/```(?:json)?\n?/g, "").trim();
-
-    let quiz;
-    try {
-      quiz = JSON.parse(cleanedText);
-    } catch (e) {
-      console.error("AI JSON parse error:", cleanedText);
-      return Response.json(
-        { error: "Invalid AI response format" },
-        { status: 500 }
-      );
-    }
-
-    return Response.json({ questions: quiz.questions });
+    return Response.json({
+      questions: [...firstBatch, ...secondBatch],
+    });
   } catch (error) {
     console.error("Interview API error:", error);
     return Response.json(
