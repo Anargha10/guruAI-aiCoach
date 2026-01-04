@@ -46,7 +46,7 @@ export default function Quiz() {
         headers: { "Content-Type": "application/json" },
       });
 
-      if (!res.ok) throw new Error("Failed to generate quiz");
+      if (!res.ok) throw new Error("Failed to generate quiz because of too much load on the server. Try again after a few mins later");
 
       const { questions } = await res.json();
       setQuizData(questions);
