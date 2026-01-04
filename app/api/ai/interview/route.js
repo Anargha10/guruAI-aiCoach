@@ -10,10 +10,20 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({
   model: "gemini-2.5-flash",
   generationConfig: {
-    temperature: 0.7,
+    temperature: 0.5,
     responseMimeType: "application/json",
   },
 });
+
+// Strong JSON parser that prevents crashing
+function safeJSON(text) {
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    console.error("JSON parse failed. Raw text:", text);
+    return null;
+  }
+}
 
 export async function POST() {
   try {
@@ -43,13 +53,13 @@ Generate EXACTLY 10 technical interview questions for a ${
 
 Each question must be multiple choice with 4 options.
 
-Return ONLY valid JSON in this exact structure:
+Return ONLY valid JSON in this EXACT format:
 
 {
   "questions": [
     {
       "question": "string",
-      "options": ["string", "string", "string", "string"],
+      "options": ["string","string","string","string"],
       "correctAnswer": "string",
       "explanation": "string"
     }
@@ -58,27 +68,31 @@ Return ONLY valid JSON in this exact structure:
 `;
 
     const result = await model.generateContent(prompt);
-    const text = result?.response?.text?.();
 
-    if (!text) {
-      throw new Error("Empty Gemini response");
-    }
+    const rawText = result?.response?.text?.();
 
-    let parsed;
-    try {
-      parsed = JSON.parse(text);
-    } catch (err) {
-      console.error("Invalid JSON from Gemini:", text);
+    if (!rawText) {
+      console.error("Gemini empty response:", result);
       return Response.json(
-        { error: "AI returned invalid JSON" },
-        { status: 500 }
+        { error: "AI returned empty response. Try again." },
+        { status: 503 }
       );
     }
 
-    if (!Array.isArray(parsed.questions)) {
+    // First parse attempt
+    let parsed = safeJSON(rawText);
+
+    // If Gemini still returned text instead of JSON
+    if (!parsed?.questions) {
+      console.error("Invalid AI JSON:", rawText);
+
       return Response.json(
-        { error: "Invalid AI response format" },
-        { status: 500 }
+        {
+          error: "AI_JSON_ERROR",
+          message:
+            "AI returned invalid JSON. Please try again in a few seconds.",
+        },
+        { status: 503 }
       );
     }
 
@@ -86,7 +100,7 @@ Return ONLY valid JSON in this exact structure:
   } catch (error) {
     console.error("Interview API error:", error);
     return Response.json(
-      { error: "Failed to generate quiz" },
+      { error: "Failed to generate quiz because our AI engine is busy. Try again a few mins later" },
       { status: 500 }
     );
   }
